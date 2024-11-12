@@ -75,6 +75,7 @@ set(SRC
     src/dipole_ipsat.cpp
     src/model_gbw.cpp
     src/model_ipsat.cpp
+    src/random.cpp
     # Add other source files here
 )
 
