@@ -12,7 +12,7 @@ vpath %.cpp src
 objdir     = obj
 tabdir     = tabs
 
-SRC        = main.cpp config.cpp pdfs_lhapdf.cpp nucleus.cpp event.cpp charges.cpp dipole_ipsat.cpp model_gbw.cpp model_ipsat.cpp random.cpp
+SRC        = main.cpp config.cpp pdfs_lhapdf.cpp nucleus.cpp event.cpp charges.cpp dipole_ipsat.cpp model_gbw.cpp model_ipsat.cpp
 SRCH       = Hankel.cpp
 OBJS       = $(patsubst %.cpp,$(objdir)/%.o,$(SRC))
 

@@ -72,7 +72,7 @@ namespace IPSatYields{
     int DIM_GLUE= 3;
 
     static const int NumberOfIntegrationPoints=64000;
-    // static const int VegasInitCalls=1e5;
+    static const int VegasInitCalls=1e5;
 
     double BesselIntegrate(double k,gsl_function F){
         // SETUP GSL INTEGRATOR //
@@ -266,9 +266,9 @@ IPSat::IPSat(Config ConfInput){
   Dip= new Dipole(p_set,config.get_Verbose());
   Dip->set_new_xscaling(xscaling);
   
-	//config.set_TMax(gen_pars::TMax);
-	//config.set_TMin(gen_pars::TMin);
-	//config.set_NT(gen_pars::NT);
+	config.set_TMax(gen_pars::TMax);
+	config.set_TMin(gen_pars::TMin);
+	config.set_NT(gen_pars::NT);
 	config.set_dT();
 
   std:: cout<< "The x0_scaling = "<<Dip->get_xscaling()<< std::endl;
