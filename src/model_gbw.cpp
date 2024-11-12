@@ -145,9 +145,9 @@ GBW::GBW(Config ConfInput){
 	quark_dist = new PDFs(&ConfInput);
   if(config.get_Verbose()){std::cout<<"   --> Initializing GBW model  "<< std::endl;}
 
-	config.set_TMax(gen_pars::TMax);
-	config.set_TMin(gen_pars::TMin);
-	config.set_NT(gen_pars::NT);
+	//config.set_TMax(gen_pars::TMax);
+	//config.set_TMin(gen_pars::TMin);
+	//config.set_NT(gen_pars::NT);
 	config.set_dT();
 }
 GBW::~GBW(){}
@@ -220,7 +220,8 @@ void GBW::make_gluon_energy(){
 			}
 			// density_f<<"\n";
 		}
-		density_f<<"\n";
+		density_f<<"\n";\
+		
 		if(config.get_Verbose()){
 			if(remainder(iy,gen_pars::skip)==0){double percentage_done = double(iy)/double(config.get_NETA());printProgress(percentage_done);}
 		}
@@ -271,8 +272,13 @@ void GBW::make_baryon_stopping(int k, QuarkID qid, QuarkID aqid){
 				res21aq=0;err21aq=0;
 			}
 			else{
+<<<<<<< HEAD
 				//double x1min=gen_pars::PMIN *exp(y_t)/ config.get_collEnergy();
 				//double x2min=gen_pars::PMIN *exp(-y_t)/ config.get_collEnergy();
+=======
+				// double x1min=gen_pars::PMIN *exp(y_t)/ config.get_collEnergy();
+				// double x2min=gen_pars::PMIN *exp(-y_t)/ config.get_collEnergy();
+>>>>>>> 8757908c44c46b587cee15f0764b83b2cb075017
 				parameters.y = y_t ;
 				parameters.T = T_t;
 				parameters.quark_id = qid;
