@@ -1084,8 +1084,8 @@ void Event::print_glauber_data_to_file(Nucleus * N1,Nucleus * N2){
 }
 
 // CREATE A NUCLEUS OBJECT - THIS IS FOR THE USE AS AN EXTERNAL LIBRARY //
-Nucleus Event::CreateNucleusObject(int A, int Z, int mode){
-	Nucleus Nucl(A,Z,mode);
+Nucleus Event::CreateNucleusObject(NucStruct N){
+	Nucleus Nucl = Nucleus(N);
 	return Nucl;
 }
 
@@ -1118,8 +1118,8 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 	bool is_event_valid=false;
 	while(!is_event_valid){
 
-		Nucleus A1(N1.A,N1.Z,N1.mode);
-		Nucleus A2(N2.A,N2.Z,N2.mode);
+		Nucleus A1(N1);
+		Nucleus A2(N2);
 
 		//Sample b
 		if(config.get_ImpactMode()== ImpSample::Fixed){get_impact_from_value(config.get_ImpactValue(),0);}
