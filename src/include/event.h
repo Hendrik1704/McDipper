@@ -35,7 +35,7 @@ class Event{
 		void get_impact_from_value(double AbsB, double ThetaB);
 		void sample_db_impact(double bmin, double bmax);
 		void sample_bdb_impact(double bmin, double bmax);
-		Nucleus CreateNucleusObject(int A, int Z, int mode);
+		Nucleus CreateNucleusObject(NucStruct N);
 
 		// Function to return density at given (x,y,eta) point (used for a use of the code as a library)
 		void EventDensityCustomGrid(int EventID, ExternalGrid ExtGrid, double *density, int mode);
