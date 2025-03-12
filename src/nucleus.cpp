@@ -457,7 +457,7 @@ void Nucleus::import_nuclear_configurations(){
 					Configuration(iC,iZ,2)=z_t;
 					iZ++;
 				}
-				else{
+				else if (isospin==0){
 					Configuration(iC,Z+iN,0)=x_t;
 					Configuration(iC,Z+iN,1)=y_t;
 					Configuration(iC,Z+iN,2)=z_t;

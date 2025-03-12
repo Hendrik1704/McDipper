@@ -8,7 +8,7 @@
 #include "random.h"
 
 #include "config.h"
-enum class Nucleon : int { proton = 0, neutron=1};
+enum class Nucleon : int { proton = 1, neutron=0};
 
 class Nucleus{
 	/* This is the nuleus class. It creates a nucleus as an object. It contains knowledge of a single realization of the nucleus, 
@@ -66,6 +66,11 @@ class Nucleus{
 		int get_NPart(){return NumberOfParticipants;}
 		int get_ParticipantStatus(int n){return ParticipantStatus[n];}
 		int get_CollisionNumber(int n){return CollisionNumber[n];}
+		int get_nucleon_type(int n){
+			if(NucleonType[n]==Nucleon::neutron){return 0;}
+			else if(NucleonType[n]==Nucleon::proton){return 1;}
+			else{return 0;}
+		}
 
 		void set_ParticipantStatus(int n, int ind){ParticipantStatus[n]=ind;}
 		void set_CollisionNumber(int n, int Ncoll_new){CollisionNumber[n]=Ncoll_new;}

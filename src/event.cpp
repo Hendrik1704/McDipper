@@ -347,14 +347,14 @@ void Event::dump_nucleon_pos(Nucleus *A1,Nucleus *A2){
 	double x_t,y_t,z_t;
   for (int i = 0; i < A1->get_A(); i++) {
 		A1->get_position_nucleon(i, x_t,y_t,z_t);
-		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A1->get_ParticipantStatus(i)<<std::endl;
+		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A1->get_ParticipantStatus(i)<<"\t"<< A1->get_nucleon_type(i) <<std::endl;
 	}
 		pos_f<<std::endl;
 	for (int i = 0; i < A2->get_A(); i++) {
 		A2->get_position_nucleon(i, x_t,y_t,z_t);
-		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A2->get_ParticipantStatus(i)<<std::endl;
+		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A2->get_ParticipantStatus(i)<<"\t"<< A2->get_nucleon_type(i)<<std::endl;
 	}
-pos_f.close();
+	pos_f.close();	
 }
 
 void Event::MakeGlobalQuantities(){
