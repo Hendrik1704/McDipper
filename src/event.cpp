@@ -1146,6 +1146,11 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 			int super_index;
 			double eg_t,eq_t,nu_t,nd_t,ns_t;
 
+			if (config.is_thick_fluct()){
+				A1->Thickness_fluct();
+				A2->Thickness_fluct();
+			}
+
 			for (int ieta = 0; ieta < ExtGrid.NETA_EXT; ieta++) {
         		double eta = ExtGrid.ETAMIN_EXT + ieta * dETA_EXT;
 
