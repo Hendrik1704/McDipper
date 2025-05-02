@@ -91,6 +91,7 @@ Event::~Event(){
 		delete[] ndAvg_ptr;
 		delete[] nsAvg_ptr;
 	}
+	delete ChargeMaker;
 }
 
 // Structural Functions
