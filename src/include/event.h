@@ -38,7 +38,10 @@ class Event{
 		Nucleus CreateNucleusObject(NucStruct N);
 
 		// Function to return density at given (x,y,eta) point (used for a use of the code as a library)
-		void EventDensityCustomGrid(int EventID, ExternalGrid ExtGrid, double *density, int mode);
+		void EventDensityCustomGrid(int EventID, ExternalGrid ExtGrid, 
+			double *density, int mode);
+		void EventDensityCustomGridQuarkAndGluonContribution(int EventID_ext, 
+			ExternalGrid ExtGrid, double *densityGluons, double *densityQuarks);
 
 		void MakeEventByEvent();
 		void InitializeAverageEvent();

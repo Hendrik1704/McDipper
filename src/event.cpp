@@ -91,7 +91,6 @@ Event::~Event(){
 		delete[] ndAvg_ptr;
 		delete[] nsAvg_ptr;
 	}
-	delete ChargeMaker;
 }
 
 // Structural Functions
@@ -1152,6 +1151,8 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 				A2.Thickness_fluct();
 			}
 
+			double BG = config.get_BG();
+			double KFactor = config.get_KFactor();
 			for (int ieta = 0; ieta < ExtGrid.NETA_EXT; ieta++) {
         		double eta = ExtGrid.ETAMIN_EXT + ieta * dETA_EXT;
 
@@ -1161,26 +1162,26 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
             		for (int iy = 0; iy < ExtGrid.NY_EXT; iy++) {
                 		double y = ExtGrid.YMIN_EXT + iy * dY_EXT;
 						
-						T1p_tmp = A1.GetThickness_p(x,y, config.get_BG());
-						T1n_tmp = A1.GetThickness_n(x,y, config.get_BG());
-						T2p_tmp = A2.GetThickness_p(x,y, config.get_BG());
-						T2n_tmp = A2.GetThickness_n(x,y, config.get_BG());
+						T1p_tmp = A1.GetThickness_p(x,y,BG);
+						T1n_tmp = A1.GetThickness_n(x,y,BG);
+						T2p_tmp = A2.GetThickness_p(x,y,BG);
+						T2n_tmp = A2.GetThickness_n(x,y,BG);
 
 						super_index = ix+ExtGrid.NX_EXT*iy+ExtGrid.NX_EXT*ExtGrid.NY_EXT*ieta;
 						if(mode == 0){ // energy density
-							eg_t = ChargeMaker->gluon_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) * config.get_KFactor() ;
-							eq_t = ChargeMaker->quark_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) ;
+							eg_t = ChargeMaker->gluon_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) * KFactor;
+							eq_t = ChargeMaker->quark_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
 							density[super_index] = eg_t + eq_t;
 						} else if(mode == 1){ // baryon density
-							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp) ;
-							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp) ;
+							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
+							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
 							density[super_index] = (nu_t+nd_t)/3.;
 						} else if(mode == 2){ // charge density
-							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp) ;
-							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp) ;
+							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
+							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
 							density[super_index] = (2.*nu_t-nd_t)/3.;
 						} else if(mode == 3){ // strangeness density
-							ns_t = ChargeMaker->s_density(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) ;
+							ns_t = ChargeMaker->s_density(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
 							density[super_index] = ns_t;
 						} else {
 							std::cout << "Requested mode in 'EventDensityCustomGrid' not available." << std::endl;
@@ -1188,7 +1189,85 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 						}
 					}
 				}
-			}			
+			}
+		}
+	}
+}
+
+void Event::EventDensityCustomGridQuarkAndGluonContribution(int EventID_ext, 
+			ExternalGrid ExtGrid, double *densityGluons, double *densityQuarks){
+	EventID = 1;
+	// Use the external ID as a seed to avoid confusion if MPI is used
+	srand48(EventID_ext);
+
+	double T1p_tmp;
+	double T1n_tmp;
+	double T2p_tmp;
+	double T2n_tmp;
+
+	// Create Nuclei
+	bool is_event_valid=false;
+	while(!is_event_valid){
+
+		Nucleus A1(N1);
+		Nucleus A2(N2);
+
+		//Sample b
+		if(config.get_ImpactMode()== ImpSample::Fixed){get_impact_from_value(config.get_ImpactValue(),0);}
+		else if(config.get_ImpactMode()== ImpSample::dbSampled){sample_db_impact(config.get_MinImpact(), config.get_MaxImpact());}
+		else if(config.get_ImpactMode()== ImpSample::bdbSampled){sample_bdb_impact(config.get_MinImpact(), config.get_MaxImpact());}
+		else{
+			std::cerr<<"Error! Impact Sampling mode invalid"<<std::endl;
+			std::cerr<<"       Use - 0 for fixed value b"<<std::endl;
+			std::cerr<<"           - 1 for uniform b-sampling (P(b) = K )"<<std::endl;
+			std::cerr<<"           - 2 for quadratic b-sampling (P(b) = K*b )"<<std::endl;
+			exit(EXIT_FAILURE);
+		}
+		
+		A1.shift_nucleus_by_impact(b1[0],b1[1]);
+		A2.shift_nucleus_by_impact(b2[0],b2[1]);
+
+		CheckParticipants(&A1,&A2);
+		
+		is_event_valid = (A1.get_number_of_participants()>0) && (A2.get_number_of_participants()>0);
+		if(is_event_valid){
+			double dETA_EXT = (ExtGrid.ETAMAX_EXT-ExtGrid.ETAMIN_EXT)/(ExtGrid.NETA_EXT-1);
+			double dX_EXT = (ExtGrid.XMAX_EXT-ExtGrid.XMIN_EXT)/(ExtGrid.NX_EXT-1);
+			double dY_EXT = (ExtGrid.YMAX_EXT-ExtGrid.YMIN_EXT)/(ExtGrid.NY_EXT-1);
+			int super_index;
+			double eg_t,eq_t,nu_t,nd_t,ns_t;
+
+			if (config.is_thick_fluct()){
+				A1.Thickness_fluct();
+				A2.Thickness_fluct();
+			}
+
+			double BG = config.get_BG();
+			double KFactor = config.get_KFactor();
+			std::cout << "KFactor: " << KFactor << std::endl;
+			for (int ieta = 0; ieta < ExtGrid.NETA_EXT; ieta++) {
+				double eta = ExtGrid.ETAMIN_EXT + ieta * dETA_EXT;
+
+				for (int ix = 0; ix < ExtGrid.NX_EXT; ix++) {
+					double x = ExtGrid.XMIN_EXT + ix * dX_EXT;
+
+					for (int iy = 0; iy < ExtGrid.NY_EXT; iy++) {
+						double y = ExtGrid.YMIN_EXT + iy * dY_EXT;
+						
+						T1p_tmp = A1.GetThickness_p(x,y,BG);
+						T1n_tmp = A1.GetThickness_n(x,y,BG);
+						T2p_tmp = A2.GetThickness_p(x,y,BG);
+						T2n_tmp = A2.GetThickness_n(x,y,BG);
+
+						super_index = ix+ExtGrid.NX_EXT*iy+ExtGrid.NX_EXT*ExtGrid.NY_EXT*ieta;
+						// energy density contributions for quarks and gluons
+						eg_t = ChargeMaker->gluon_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) * KFactor;
+						eq_t = ChargeMaker->quark_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
+						densityGluons[super_index] = eg_t;
+						densityQuarks[super_index] = eq_t;
+					}
+				}
+			}
 		}
 	}
 }
