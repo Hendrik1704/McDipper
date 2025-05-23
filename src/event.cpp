@@ -1104,6 +1104,7 @@ Nucleus Event::CreateNucleusObject(NucStruct N){
 	- 2 = charge density
 	- 3 = strangeness density
 	- any other value will cause an error and the code exits
+- All densities are returned in units of [fm^-3]
 */
 void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double *density, int mode){
 	EventID = 1;
@@ -1172,18 +1173,18 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 						if(mode == 0){ // energy density
 							eg_t = ChargeMaker->gluon_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) * KFactor;
 							eq_t = ChargeMaker->quark_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
-							density[super_index] = eg_t + eq_t;
+							density[super_index] = (eg_t + eq_t) * gen_pars::GeV_to_fmm1; // final unit [fm^-3]
 						} else if(mode == 1){ // baryon density
 							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
 							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
-							density[super_index] = (nu_t+nd_t)/3.;
+							density[super_index] = ((nu_t+nd_t)/3.) * gen_pars::GeV_to_fmm1; 
 						} else if(mode == 2){ // charge density
 							nu_t = ChargeMaker->u_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
 							nd_t = ChargeMaker->d_density(eta, T1p_tmp, T1n_tmp, T2p_tmp, T2n_tmp);
-							density[super_index] = (2.*nu_t-nd_t)/3.;
+							density[super_index] = ((2.*nu_t-nd_t)/3.) * gen_pars::GeV_to_fmm1;
 						} else if(mode == 3){ // strangeness density
 							ns_t = ChargeMaker->s_density(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
-							density[super_index] = ns_t;
+							density[super_index] = ns_t * gen_pars::GeV_to_fmm1;
 						} else {
 							std::cout << "Requested mode in 'EventDensityCustomGrid' not available." << std::endl;
 							exit(1);
@@ -1264,8 +1265,8 @@ void Event::EventDensityCustomGridQuarkAndGluonContribution(int EventID_ext,
 						// energy density contributions for quarks and gluons
 						eg_t = ChargeMaker->gluon_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp) * KFactor;
 						eq_t = ChargeMaker->quark_energy(eta, T1p_tmp+T1n_tmp, T2p_tmp+T2n_tmp);
-						densityGluons[super_index] = eg_t;
-						densityQuarks[super_index] = eq_t;
+						densityGluons[super_index] = eg_t * gen_pars::GeV_to_fmm1;
+						densityQuarks[super_index] = eq_t * gen_pars::GeV_to_fmm1;
 					}
 				}
 			}
