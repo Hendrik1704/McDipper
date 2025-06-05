@@ -32,12 +32,12 @@ class Nucleus{
 
 		//Nuclear structure functions 	
 		void import_nuclear_configurations();
+		double get_weight(){return weight;}
 		int ConfIndex(int ie,int n,int ix);
 		//Retrievers
 		const double& Configuration(int64_t ie, int64_t n, int64_t ix) const;
 		double& Configuration (int64_t ie, int64_t n, int64_t ix);
-		
-
+	
 		// Thickness functions
 		double NucleonThickness(double x,double y,double x0,double y0,int n,double BG);
 		double GetThickness(double xt,double yt,double BG);
@@ -90,11 +90,14 @@ class Nucleus{
 		std::string modeStr;
 		std::string InputName;
 		bool IsIsospinSpecified;
+		// bool IsSpinSpecified;
         bool is_hotspots_fluct=false;
         bool is_thick_fluct=false;
 
 		double * Configurations_ptr;
+		double * Config_weights;
 		int NConf;
+		bool is_weights=false;
 
         int Nq=0;
         double Bq=0.0;
@@ -128,7 +131,8 @@ class Nucleus{
 
 		void shuffle(int *array, size_t n);
 
-};
+		double weight= 1.0; // Statistical weight of the nuclear configuration, DEF=1, but can change due to, i.e. NLEFT, configs.
+	};
 
 #endif /* nucleus */
  

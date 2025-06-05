@@ -65,7 +65,8 @@ class Event{
 
 		// OUTPUT
 		void Initialize_output();
-		void dump_nucleon_pos(Nucleus * A1,Nucleus * A2);
+		void print_nucleon_pos(Nucleus * A1,Nucleus * A2, int EventID);
+		void print_weights(Nucleus * N1,Nucleus * N2, int EventID);
 		void MakeChargeOutput();
 		void MakeGlobalQuantities();
 		void MakeGlobalQuantities_AverageEvent();
@@ -73,9 +74,14 @@ class Event{
 		void MakeThicknessOutput();
 		void MakeChargeOutput_Transverse(double eta);
 		void Make_Event_Output();
+		void MakeBlock(int EventID);
+		void RemoveBlock();
 
 		void MakeChargeOutputMidrapidity();
 
+		void MakeOutputFiles();
+
+		
 		
 
 		////   TOOLS

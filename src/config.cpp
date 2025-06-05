@@ -140,6 +140,12 @@ void Config::process_general_parameters(std::string testline){
       if(subheader=="Nucleus1"){NConf1=std::stoi(value_t);}
       if(subheader=="Nucleus2"){NConf2=std::stoi(value_t);}
     }
+    if(name_t== "Weights"){
+      if(subheader=="Nucleus1"){N1_weights=make_bool(value_t);}
+      if(subheader=="Nucleus2"){N2_weights=make_bool(value_t);}
+      
+    }
+
     if(name_t=="GlauberAcceptance"){
       if(value_t=="Standard"){GMode=GlauberMode::Standard;GModeStr="Standard";}
       else if(value_t=="Gaussian"){GMode=GlauberMode::Gaussian;GModeStr="Gaussian";}
@@ -543,6 +549,9 @@ Config::Config(const Config& OldConf){
    N2IsospinSpec=OldConf.N2IsospinSpec;
    NConf1=OldConf.NConf1;
    NConf2=OldConf.NConf2;
+   N1_weights=OldConf.N1_weights;
+   N2_weights=OldConf.N2_weights;
+
    GMode=OldConf.GMode;
    GModeStr=OldConf.GModeStr;
   

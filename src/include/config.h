@@ -17,6 +17,7 @@ struct NucStruct{
     int A; int Z;int mode;
     std::string inputFile;
     bool IsospinSpecified; int NConf; 
+    bool is_weights;
     bool is_thick_fluct; 
     bool is_hotspots_fluct;
     int Nq; double Bq; double Br;
@@ -79,11 +80,20 @@ class Config{
       return input;
     };
     bool get_IsospinDefinition(int i){
-      int IsoDef_t=false;
+      bool IsoDef_t=false;
       if(i==1 && mode1==3){IsoDef_t= N1IsospinSpec;}
       else if(i==2 && mode2 ==3){IsoDef_t= N2IsospinSpec;}
-      return IsoDef_t;};
+      return IsoDef_t;
+    }
+
     int get_NConf(int i){int NConf_t=0;if(i==1){NConf_t=NConf1;}else if(i==2){NConf_t=NConf2;}return NConf_t;};
+
+
+    bool get_weight(int i){
+      bool DefWeight_t=false;
+      if(i==1 && mode1==3){DefWeight_t= N1_weights;}
+      else if(i==2 && mode2 ==3){DefWeight_t= N2_weights;}
+      return DefWeight_t;}
 
     bool is_hotspots_fluct(){return hotspots_fluct;}
     int get_Nq() {return Nq;}
@@ -192,6 +202,8 @@ class Config{
     bool N2IsospinSpec=false;
     int NConf1 = 0;
     int NConf2 = 0;
+    bool N1_weights=false;
+    bool N2_weights=false;
     
     std::string mode1name,mode2name;
     double sqrtsNN;

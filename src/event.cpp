@@ -31,11 +31,12 @@ Event::Event(Config ConfInput){
     N1.is_thick_fluct=config.is_thick_fluct();
     N1.sigma=config.get_sigma();
     N1.fluct_mode =config.get_fluct_mode();
-        
+
 	if(N1.mode==3){
 		N1.inputFile=config.get_NucleusInput(1);
 		N1.IsospinSpecified=config.get_IsospinDefinition(1);
 		N1.NConf=config.get_NConf(1);
+		N1.is_weights=config.get_weight(1);
 	}
 
 
@@ -53,6 +54,7 @@ Event::Event(Config ConfInput){
 		N2.inputFile=config.get_NucleusInput(2);
 		N2.IsospinSpecified=config.get_IsospinDefinition(2);
 		N2.NConf=config.get_NConf(2);
+		N2.is_weights=config.get_weight(1);
 	}
 
 	PrimalSeed=config.get_seed();
@@ -207,7 +209,7 @@ void Event::NewEvent(int EventID_in, Nucleus *A1, Nucleus *A2){
 				std::cout<< "    Number of Collisions: " <<A1->get_NColl()+A2->get_NColl() <<  "\n";
 			}
 
-			dump_nucleon_pos(A1,A2);
+			if (config.is_format("Nuclei") ){print_nucleon_pos(A1,A2,EventID);}
 
 			if(config.get_Verbose()){std::cout<<"    Nucleon Positions written out\n";}
             if (config.is_thick_fluct()){
@@ -225,6 +227,8 @@ void Event::NewEvent(int EventID_in, Nucleus *A1, Nucleus *A2){
 				}
 			}
 			print_glauber_data_to_file(A1,A2);
+			//Print weights for the NLEFT cases.
+			if(config.get_weight(1) || config.get_weight(2)){print_weights(A1,A2,EventID);}
 
 			MakeGlobalQuantities();
 			bool is_charge_output= config.is_format("EMoments") || config.is_format("NMoments") || config.is_format("Charges");
@@ -232,6 +236,7 @@ void Event::NewEvent(int EventID_in, Nucleus *A1, Nucleus *A2){
 				if(config.is_boost_invariant() ) {MakeChargeOutputMidrapidity();}
 				else{MakeChargeOutput();}
 			}
+			
 		}
 		#endif
 	}
@@ -242,6 +247,20 @@ void Event::NewEvent(int EventID_in, Nucleus *A1, Nucleus *A2){
 	}
 }
 
+void Event::MakeBlock(int EventID){
+		std::ofstream block_f;
+	std::ostringstream block_name;
+	block_name << OUTPATH <<"/block.txt" ;
+	block_f.open(block_name.str());
+	block_f<< EventID;
+	block_f.close();
+}
+
+void Event::RemoveBlock(){
+	std::ostringstream block_name;
+	block_name << OUTPATH <<"/block.txt" ;
+	std::filesystem::remove(block_name.str());
+}
 
 void Event::MakeEventByEvent(){
 
@@ -252,7 +271,10 @@ void Event::MakeEventByEvent(){
 	
 	if( ev0 < config.get_NEvents()){
 		std::cerr<< "[ Warning::Event ]: Event generation starting from event # "<< ev0 << std::endl;
-		for (int ev = ev0; ev < config.get_NEvents(); ev++) {NewEvent(get_ID(ev,config.get_NEvents()),&A1,&A2);}
+		for (int ev = ev0; ev < config.get_NEvents(); ev++) {
+			NewEvent(get_ID(ev,config.get_NEvents()),&A1,&A2);
+			MakeBlock(ev);
+		}
 	}
 	else{std::cerr<< "[ Error::Event ]: Initial event ID="<< ev0 << " larger than Nevents in config file. Exiting."<<std::endl;}
 	
@@ -260,6 +282,7 @@ void Event::MakeEventByEvent(){
 		MakeGlobalQuantities_AverageEvent();
 		MakeChargeOutput_AverageEvent();
 	}
+	// RemoveBlock();
 }
 
 
@@ -287,9 +310,56 @@ double Event::get_y(double iy){return iy*config.get_dY() + config.get_YMIN();}
 double Event::get_eta(double ieta){return ieta*config.get_dETA() + config.get_ETAMIN();}
 
 ////////////////////
+void Event::MakeOutputFiles(){
+	/// Make Nuclei File
+	std::ofstream pos_f;
+	std::ostringstream posname;
+	posname << OUTPATH << "/Nuclei.dat";
+	pos_f.open(posname.str());
+	pos_f.close();	
+
+	// Make Global Data
+	std::ofstream global_f;
+	std::ostringstream global_name;
+	global_name << OUTPATH <<"/Global.dat" ;
+	global_f.open(global_name.str());
+	global_f.close();
+
+	std::ofstream e_moments_f; std::ostringstream e_moments_name;
+	std::ofstream nu_moments_f; std::ostringstream nu_moments_name;
+	std::ofstream nd_moments_f; std::ostringstream nd_moments_name;
+
+	if(config.get_weight(1) || config.get_weight(2)){
+		std::ofstream weights_f;
+		std::ostringstream weights_name;
+		weights_name << OUTPATH <<"/Weights.dat" ;
+		weights_f.open(weights_name.str());
+		weights_f <<"# EventID \t W(1) \t W(2) \t W(Event) " << std::endl;
+		weights_f.close();
+	}
+
+	if(config.is_format("EMoments")){
+		e_moments_name << OUTPATH <<"/EnergyMoments.dat" ;
+		e_moments_f.open(e_moments_name.str());
+		e_moments_f.close();
+	}
+
+	if(config.is_format("NMoments")){
+		nu_moments_name << OUTPATH <<"/NuMoments.dat" ;
+		nu_moments_f.open(nu_moments_name.str());
+		nu_moments_f.close();
+
+		nd_moments_name << OUTPATH <<"/NdMoments.dat" ;
+		nd_moments_f.open(nd_moments_name.str());
+		nd_moments_f.close();
+	}
+
+}
+
+
 
 void Event::Initialize_output(){
-
+	
 	if(config.is_output_named()){
 
 		std::ostringstream dirname_t;
@@ -300,17 +370,17 @@ void Event::Initialize_output(){
 		ev0=0;
 		if ( !(fs::create_directories(dirpath))){
 			std::cerr<< "[ Warning::Event ]: Output directory ("<< OUTPATH<< ") already exists!"<< std::endl ;
-			for (int iev = 0; iev < config.get_NEvents(); iev++)
-			{
-				std::ostringstream filename_t;
-				filename_t << config.get_out_path()<<"/" <<config.get_run_name() << "/global_"<< iev<< ".dat"	;
-				std::string filepath = filename_t.str();
+			std::ostringstream block_name;
+			block_name << OUTPATH <<"/block.txt" ;
+	
+			std::ifstream f(block_name.str());
+			if ( !f.is_open() ) {std::cerr << "Error opening the file!";}
 
-				if(fs::exists(filepath) && iev==config.get_NEvents()-1){ev0=config.get_NEvents();}
-				if(!fs::exists(filepath) && iev>0){ev0=iev-1;break;}//set the initial event to the last event
-				
-			}
-			
+			std::string s;
+			getline(f, s);
+			ev0=std::stoi(s) +1;
+			f.close();
+
 		}
 
 	}
@@ -337,33 +407,28 @@ void Event::Initialize_output(){
 
 }
 
-void Event::dump_nucleon_pos(Nucleus *A1,Nucleus *A2){
+void Event::print_nucleon_pos(Nucleus *A1,Nucleus *A2, int EventID){
 
 	std::ofstream pos_f;
-  std::ostringstream posname;
-  posname << OUTPATH << "/Event_"<<EventID<<"_Nuclei.dat";
-  pos_f.open(posname.str());
-
+	std::ostringstream posname;
+	posname << OUTPATH << "/Nuclei.dat";
+	pos_f.open(posname.str(), std::ios_base::app);
+	pos_f<<"# Start Event "<< EventID << std::endl;
 	double x_t,y_t,z_t;
-  for (int i = 0; i < A1->get_A(); i++) {
+	for (int i = 0; i < A1->get_A(); i++) {
 		A1->get_position_nucleon(i, x_t,y_t,z_t);
-		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A1->get_ParticipantStatus(i)<<"\t"<< A1->get_nucleon_type(i) <<std::endl;
+		pos_f<< 1 <<"\t"<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A1->get_ParticipantStatus(i)<<"\t"<< A1->get_nucleon_type(i) <<std::endl;
 	}
-		pos_f<<std::endl;
 	for (int i = 0; i < A2->get_A(); i++) {
 		A2->get_position_nucleon(i, x_t,y_t,z_t);
-		pos_f<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A2->get_ParticipantStatus(i)<<"\t"<< A2->get_nucleon_type(i)<<std::endl;
+		pos_f<< 2 <<"\t"<< i <<"\t"<< x_t<<"\t"<< y_t<<"\t"<< z_t<<"\t"<< A2->get_ParticipantStatus(i)<<"\t"<< A2->get_nucleon_type(i)<<std::endl;
 	}
+	pos_f<<"# End Event "<< EventID << std::endl;
 	pos_f.close();	
+
 }
 
 void Event::MakeGlobalQuantities(){
-
-
-	std::ofstream global_f;
-	std::ostringstream global_name;
-	global_name << OUTPATH <<"/global_"<<EventID<< ".dat" ;
-	global_f.open(global_name.str(), std::ios_base::app);
 
 	double eg_t,eq_t,nu_t,nd_t,ns_t;
 	double t1p_t,t1n_t,t2p_t,t2n_t;
@@ -495,6 +560,10 @@ void Event::MakeGlobalQuantities(){
 	total_q_event= (2*total_u_event-total_d_event)/3;
 	total_B_event= (total_u_event+total_d_event)/3;
 
+	std::ofstream global_f;
+	std::ostringstream global_name;
+	global_name << OUTPATH <<"/Global.dat" ;
+	global_f.open(global_name.str(), std::ios_base::app);
 	global_f<<  "E_g\t" << total_energy_event_g<<std::endl;
 	global_f<<  "E_q\t" << total_energy_event_q<<std::endl;
 	global_f<<  "E_tot\t" << total_energy_event<<std::endl;
@@ -526,6 +595,8 @@ void Event::MakeGlobalQuantities(){
 
 	global_f<<  "x_cm_mid\t" << x_cm[izero]<<std::endl;
 	global_f<<  "y_cm_mid\t" << y_cm[izero]<<std::endl;
+	global_f<<"# End Event "<< EventID << std::endl;
+	global_f.close();
 
 
 	if(config.get_Verbose()){
@@ -538,7 +609,7 @@ void Event::MakeGlobalQuantities(){
 		std::cout << "\nGlobal CoM coordinates:  ( x = " << x_cm_global << " ,y = " << y_cm_global<< ")"<<std::endl ;
 	}
 
-	global_f.close();
+	
 
 }
 
@@ -554,16 +625,19 @@ void Event::MakeChargeOutput(){
 	}
 	
 	if(config.is_format("EMoments")){
-		e_moments_name << OUTPATH <<"/EnergyMoments_"<<EventID<< ".dat" ;
-		e_moments_f.open(e_moments_name.str());
+		e_moments_name << OUTPATH <<"/EnergyMoments.dat" ;
+		e_moments_f.open(e_moments_name.str(), std::ios_base::app);
+		e_moments_f<<"# Start Event "<< EventID << std::endl;
 	}
 
 	if(config.is_format("NMoments")){
-		nu_moments_name << OUTPATH <<"/NuMoments_"<<EventID<< ".dat" ;
-		nu_moments_f.open(nu_moments_name.str());
+		nu_moments_name << OUTPATH <<"/NuMoments.dat" ;
+		nu_moments_f.open(nu_moments_name.str(), std::ios_base::app);
+		nu_moments_f<<"# Start Event "<< EventID << std::endl;
 
-		nd_moments_name << OUTPATH <<"/NdMoments_"<<EventID<< ".dat" ;
-		nd_moments_f.open(nd_moments_name.str());
+		nd_moments_name << OUTPATH <<"/NdMoments.dat" ;
+		nd_moments_f.open(nd_moments_name.str(), std::ios_base::app);
+		nd_moments_f<<"# Start Event "<< EventID << std::endl;
 	}
 
 	double eg_t,eq_t,nu_t,nd_t,ns_t;
@@ -577,6 +651,7 @@ void Event::MakeChargeOutput(){
 		double eta_t = ieta*config.get_dETA() + config.get_ETAMIN();
 
 		double lattice_sum_dint23dy = 0.;
+		double lattice_sum_dint43dy = 0.;
 
 		std::vector<double> lattice_sum_eg(n_max+1, 0.0);
 		std::vector<double> lattice_sum_eq(n_max+1, 0.0);
@@ -624,6 +699,7 @@ void Event::MakeChargeOutput(){
 				double phi_t = atan2(y_t,x_t);
 				if(config.is_format("EMoments")){
 					lattice_sum_dint23dy +=  cell_trans_volume* gen_pars::GeV2_to_fmm2*pow( gen_pars::fmm2_to_GeV2 * (eg_t + eq_t), 2./3.);
+					lattice_sum_dint43dy +=  cell_trans_volume* pow(gen_pars::GeV2_to_fmm2 , 2.0)*pow( gen_pars::fmm2_to_GeV2 * (eg_t + eq_t), 4./3.);  // in fm^{-4}
 				}	
 
 				for (int j = 0; j <= n_max; j++)
@@ -656,7 +732,7 @@ void Event::MakeChargeOutput(){
 				}
 			}
 		}
-		if(config.is_format("EMoments")){e_moments_f << eta_t << "\t"<< lattice_sum_dint23dy ;}
+		if(config.is_format("EMoments")){e_moments_f << eta_t << "\t"<< lattice_sum_dint23dy<< "\t"<< lattice_sum_dint43dy ;}
 		if(config.is_format("NMoments")){
 			nu_moments_f << eta_t;
 			nd_moments_f << eta_t;
@@ -685,8 +761,12 @@ void Event::MakeChargeOutput(){
 		}
 	}
 
-	if(config.is_format("EMoments")){e_moments_f.close();}
 	if(config.is_format("EMoments")){
+		e_moments_f<<"# End Event "<< EventID << std::endl;
+		e_moments_f.close();}
+	if(config.is_format("EMoments")){
+		nu_moments_f<<"# End Event "<< EventID << std::endl;
+		nd_moments_f<<"# End Event "<< EventID << std::endl;
 		nu_moments_f.close();
 		nd_moments_f.close();
 	}
@@ -743,6 +823,7 @@ void Event::MakeChargeOutputMidrapidity(){
 
 	if(config.get_Verbose()){std::cout<< "\nWriting out -midrapidity- charges and moments for Event " << EventID <<std::endl;}
 	double lattice_sum_dint23dy = 0.;
+	double lattice_sum_dint43dy = 0.;
 
 	std::vector<double> lattice_sum_eg(n_max+1, 0.0);
 	std::vector<double> lattice_sum_eq(n_max+1, 0.0);
@@ -783,13 +864,11 @@ void Event::MakeChargeOutputMidrapidity(){
 			nd_t=ChargeMaker->d_density(eta_t, t1p_t, t1n_t, t2p_t, t2n_t) ;
 			ns_t=ChargeMaker->s_density(eta_t, t1_t, t2_t) ;
 
-			
-
-
 			double r_t = sqrt(x_t*x_t + y_t*y_t);
 			double phi_t = atan2(y_t,x_t);
 			if(config.is_format("EMoments")){
 				lattice_sum_dint23dy +=  cell_trans_volume* gen_pars::GeV2_to_fmm2*pow( gen_pars::fmm2_to_GeV2 * (eg_t + eq_t), 2./3.);
+				lattice_sum_dint43dy +=  cell_trans_volume* pow(gen_pars::GeV2_to_fmm2 , 2.0) * pow( gen_pars::fmm2_to_GeV2 * (eg_t + eq_t), 4./3.);
 			}	
 
 			for (int j = 0; j <= n_max; j++)
@@ -822,7 +901,7 @@ void Event::MakeChargeOutputMidrapidity(){
 			}
 		}
 	}
-	if(config.is_format("EMoments")){e_moments_f << EventID << "\t"<< lattice_sum_dint23dy ;}
+	if(config.is_format("EMoments")){e_moments_f << EventID << "\t"<< lattice_sum_dint23dy<< "\t"<< lattice_sum_dint43dy ;}
 	if(config.is_format("NMoments")){
 		nu_moments_f << EventID;
 		nd_moments_f << EventID;
@@ -1067,8 +1146,9 @@ void Event::print_glauber_data_to_file(Nucleus * N1,Nucleus * N2){
 	/* This function prints the MC-Glauber*/
 	std::ofstream global_f;
 	std::ostringstream global_name;
-	global_name << OUTPATH <<"/global_"<<EventID<< ".dat" ;
-	global_f.open(global_name.str());
+	global_name << OUTPATH <<"/Global.dat" ;
+	global_f.open(global_name.str(), std::ios_base::app);
+	global_f<<"# Start Event "<< EventID << std::endl;
 
 	global_f<<  "N_part_1\t"<< N1->get_number_of_participants() << std::endl;
 	global_f<<  "N_part_2\t"<< N2->get_number_of_participants() << std::endl;
@@ -1081,6 +1161,16 @@ void Event::print_glauber_data_to_file(Nucleus * N1,Nucleus * N2){
 
 
 	global_f.close();
+}
+
+void Event::print_weights(Nucleus * N1,Nucleus * N2, int EventID){
+	/* This function prints the weights in a compact way */
+	std::ofstream weights_f;
+	std::ostringstream weights_name;
+	weights_name << OUTPATH <<"/Weights.dat" ;
+	weights_f.open(weights_name.str(), std::ios_base::app);
+	weights_f << EventID<<"\t"<<N1->get_weight()<<"\t"<< N2->get_weight() <<"\t"<< N1->get_weight()*N2->get_weight() << std::endl;
+	weights_f.close();
 }
 
 void Event::InitializeAverageEvent(){
@@ -1410,3 +1500,5 @@ void Event::MakeChargeOutput_AverageEvent(){
 	if(config.get_Verbose()){printProgress(1);}
 
 }
+
+
