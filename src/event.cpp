@@ -54,7 +54,7 @@ Event::Event(Config ConfInput){
 		N2.inputFile=config.get_NucleusInput(2);
 		N2.IsospinSpecified=config.get_IsospinDefinition(2);
 		N2.NConf=config.get_NConf(2);
-		N2.is_weights=config.get_weight(1);
+		N2.is_weights=config.get_weight(2);
 	}
 
 	PrimalSeed=config.get_seed();
