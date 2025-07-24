@@ -115,6 +115,7 @@ class Config{
     void set_MaxImpact(double val){bMax = val;}
     void set_MinImpact(double val){bMin = val;}
     void set_KFactor(double val){KFactor = val;}
+    void set_Seed(int val){seed = val;}
 
     //Grid!
 

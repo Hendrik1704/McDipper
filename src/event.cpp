@@ -1092,8 +1092,6 @@ Nucleus Event::CreateNucleusObject(NucStruct N){
 
 // CREATE A DENSITY PROFILE FOR AN EXTERNALLY DEFINED GRID - THIS IS FOR THE USE AS AN EXTERNAL LIBRARY //
 /*
-- The external event ID 'EventID_ext' sets the seed for the event. This is useful if the external code is
-  MPI parallelized to handle the seeds properly.
 - 'ExtGrid' is a struct that contains NX_EXT, NY_EXT, NZ_EXT, XMIN_EXT, XMAX_EXT, YMIN_EXT, YMAX_EXT, ETAMIN_EXT, ETAMAX_EXT.
   The external grid can have equal dimensions as the McDipper grid speciefied in the config, but it can also be
   smaller / coarser than it.
@@ -1106,11 +1104,7 @@ Nucleus Event::CreateNucleusObject(NucStruct N){
 	- any other value will cause an error and the code exits
 - All densities are returned in units of [fm^-3]
 */
-void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double *density, int mode){
-	EventID = 1;
-	// Use the external ID as a seed to avoid confusion if MPI is used
-	srand48(EventID_ext);
-
+void Event::EventDensityCustomGrid(ExternalGrid ExtGrid, double *density, int mode){
 	double T1p_tmp;
 	double T1n_tmp;
 	double T2p_tmp;
@@ -1196,12 +1190,7 @@ void Event::EventDensityCustomGrid(int EventID_ext, ExternalGrid ExtGrid, double
 	}
 }
 
-void Event::EventDensityCustomGridQuarkAndGluonContribution(int EventID_ext, 
-			ExternalGrid ExtGrid, double *densityGluons, double *densityQuarks){
-	EventID = 1;
-	// Use the external ID as a seed to avoid confusion if MPI is used
-	srand48(EventID_ext);
-
+void Event::EventDensityCustomGridQuarkAndGluonContribution(ExternalGrid ExtGrid, double *densityGluons, double *densityQuarks){
 	double T1p_tmp;
 	double T1n_tmp;
 	double T2p_tmp;
