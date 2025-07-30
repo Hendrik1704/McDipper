@@ -46,8 +46,8 @@ namespace gen_pars{
   const double T_tolerance = dT/2.;
   const double Q_tolerance = 0.;
 
-  const double epsabs= 0.001;
-  const double epsrel= 0.001;
+  const double epsabs= 0.0;
+  const double epsrel= 0.00001;
   const double limit=50000;
   const double PMIN=0.01;
   const double PMAX=50;

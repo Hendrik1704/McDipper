@@ -916,7 +916,7 @@ double Dipole::FundamentalDipole_k(double x, double k, double T){
 	double tmp=0;
 	if( x>=0.999 ){return 0.0;}
 	else if ( k<0 || k >= K_MAX ){return 0.0;}
-	else if ( T <= T_MIN || T >= T_MAX ){return 0.0;}
+	else if ( T < T_MIN || T > T_MAX ){return 0.0;}
 	else if(x <= X_MIN ){return 0;}
 	else{
 		double Y_t = get_Y(x);
@@ -934,9 +934,21 @@ double Dipole::FundamentalDipole_k(double x, double k, double T){
 				Q2X = a*pow(1-x,b);
 			}
 			else{
-				Q2X = gsl_spline2d_eval(Q2A_spl,T,Y_t,xaccQ2A, yaccQ2A);
+				Q2X = gsl_spline2d_eval(Q2F_spl,T,Y_t,xaccQ2F, yaccQ2F);
 			}
 			tmp= (Q20/Q2X)*FundamentalDipole_k(xscaling, k * sqrt(Q20/Q2X), T);
+		}
+		else if (T< IPsat_pars::Tscaling){
+			double T1= IPsat_pars::Tscaling;
+			double T2=IPsat_pars::T_dip_dT/2.;
+			double Q12 = gsl_spline2d_eval(Q2F_spl,T1,Y_t,xaccQ2F, yaccQ2F);
+			double Q22 = gsl_spline2d_eval(Q2F_spl,T2,Y_t,xaccQ2F, yaccQ2F);
+			double a=(-(Q22*T1) + Q12*T2)/(T1*(T1 - T2)*T2);
+			double b= (Q22*pow(T1,2) - Q12*pow(T2,2))/(pow(T1,2)*T2 - T1*pow(T2,2));
+			// double a = Q12*pow(T1,-2.);
+			
+			double Q2T = a * pow(T,2.) + b * T;
+			tmp= (Q12/Q2T)*FundamentalDipole_k(x, k * sqrt(Q12/Q2T), IPsat_pars::Tscaling);
 		}
 		else{
 			int jT;
@@ -982,11 +994,11 @@ double Dipole::AdjointDipole_k(double x, double k, double T){
 	double tmp=0;
 	if( x>=0.999 ){tmp=0.0;}
 	else if (  k<0 || k >= K_MAX ){tmp=0.0;}
-	else if ( T <= T_MIN || T >= T_MAX ){tmp=0.0;}
+	else if ( T < T_MIN || T > T_MAX ){tmp=0.0;}
 	else if(x <= X_MIN ){tmp=0.0;}
 	else{
 		double Y_t = get_Y(x);
-		if(x > xscaling){
+		if(x > xscaling && T>= IPsat_pars::Tscaling ){
 			double Y0 = get_Y(xscaling);
 			double Q20= gsl_spline2d_eval(Q2A_spl,T,Y0,xaccQ2A, yaccQ2A);
 			double Q2X; 
@@ -1003,8 +1015,20 @@ double Dipole::AdjointDipole_k(double x, double k, double T){
 				Q2X = gsl_spline2d_eval(Q2A_spl,T,Y_t,xaccQ2A, yaccQ2A);
 			}
 			tmp= (Q20/Q2X)*AdjointDipole_k(xscaling, k * sqrt(Q20/Q2X), T);
-			// if(tmp!=tmp){std::cerr<<"TEST"<<x<<"\t"<<k<<"\t"<<T<< std::endl;}
-
+		}
+		else if (T< IPsat_pars::Tscaling && x < xscaling ){
+			double T1= IPsat_pars::Tscaling;
+			double T2=IPsat_pars::T_dip_dT/2.;
+			double Q12 = gsl_spline2d_eval(Q2A_spl,T1,Y_t,xaccQ2A, yaccQ2A);
+			double Q22 = gsl_spline2d_eval(Q2A_spl,T2,Y_t,xaccQ2A, yaccQ2A);
+			double a=(-(Q22*T1) + Q12*T2)/(T1*(T1 - T2)*T2);
+			double b= (Q22*pow(T1,2) - Q12*pow(T2,2))/(pow(T1,2)*T2 - T1*pow(T2,2));
+			// double a = Q12*pow(T1,-2.);
+			double Q2T = a * pow(T,2.) + b * T;
+			tmp= (Q12/Q2T)*AdjointDipole_k(x, k * sqrt(Q12/Q2T), IPsat_pars::Tscaling);
+		}
+		else if (T< IPsat_pars::Tscaling && x > xscaling ){
+			tmp=0;
 		}
 		else{
 			int jT;
@@ -1042,6 +1066,11 @@ double Dipole::AdjointDipole_k(double x, double k, double T){
 			}
 			tmp = tmp1 + (tmp2-tmp1) * (T-T1)/(T2-T1) ;  // lin interpolation in Q
 		}
+	}
+
+	if(tmp!=tmp){
+		tmp= 0.0;
+		// if (k==k){std::cerr<< "FUCK YOUUUUU, x = "<< x << ", T = "<<  T << ", k = " << k<< std::endl;exit(0); } 
 	}
 	return tmp;
 }
