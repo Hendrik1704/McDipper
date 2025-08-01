@@ -268,6 +268,7 @@ void Config::process_output_parameters(std::string testline){
     else{std::cerr<<"Error: Average-Event output mode not implemented! Exiting.";exit(EXIT_FAILURE);}
   }
   if(name_t == "BoostInvariant"){ boost_invariant= make_bool(value_t);}
+  if(name_t == "suppress_output"){ suppress_output= make_bool(value_t);}
   // 
  
 }
@@ -589,6 +590,7 @@ Config::Config(const Config& OldConf){
    format=new std::string[n_formats];
    print_avg=OldConf.print_avg;
    boost_invariant=OldConf.boost_invariant;
+   suppress_output=OldConf.suppress_output;
    for (int i = 0; i < n_formats; i++) {format[i]=OldConf.format[i];}
    //Thickness_Parameters
    TMax= OldConf.TMax;
