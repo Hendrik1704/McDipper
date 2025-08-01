@@ -73,8 +73,10 @@ Event::Event(Config ConfInput){
 	if(config.print_avg_event()>0){InitializeAverageEvent();}
 
 	ChargeMaker = new Charges(config);
-	Initialize_output();
-	
+	if (!config.is_output_suppressed()) {
+		Initialize_output();
+	}
+
 	cell_trans_volume=config.get_dX()*config.get_dY();
 }
 

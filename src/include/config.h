@@ -192,6 +192,8 @@ class Config{
     }
     int print_avg_event(){return print_avg;}
     bool is_boost_invariant(){return boost_invariant;}
+    void set_suppress_output(bool flag){ suppress_output = flag; }
+    bool is_output_suppressed() const { return suppress_output; }
 
   private:
 
@@ -258,6 +260,7 @@ class Config{
     std::string * format;
     int print_avg=0;
     bool boost_invariant=false;
+    bool suppress_output=false;
 
     // Thickness_Parameters
     double TMax=-1;
